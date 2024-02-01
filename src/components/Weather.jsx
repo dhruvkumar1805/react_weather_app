@@ -19,11 +19,11 @@ import {
 import { TbTemperatureCelsius } from "react-icons/tb";
 import { ImSpinner8 } from "react-icons/im";
 
-const APIkey = process.env.VITE_BACKEND_URL;
+const APIkey = process.env.VITE_APIKEY;
 
 const Weather = () => {
   const [data, setData] = useState(null);
-  const [location, setLocation] = useState("Punjab");
+  const [location, setLocation] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -45,12 +45,32 @@ const Weather = () => {
   useEffect(() => {
     setLoading(true);
 
-    const url = `http://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${APIkey}`;
+    if (!location) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${APIkey}`;
 
-    axios.get(url).then((res) => {
-      setData(res.data);
-      setLoading(false);
-    });
+          axios.get(weatherUrl).then((res) => {
+            const cityName = res.data.name || "Punjab";
+            setLocation(cityName);
+          });
+        },
+        (error) => {
+          console.error("Error getting user's location:", error);
+          setLocation("Punjab");
+        }
+      );
+    } else {
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${APIkey}`;
+
+      axios.get(weatherUrl).then((res) => {
+        setTimeout(() => {
+          setData(res.data);
+          setLoading(false);
+        }, 1500);
+      });
+    }
   }, [location]);
 
   if (!data) {
